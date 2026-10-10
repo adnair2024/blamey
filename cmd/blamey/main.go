@@ -14,6 +14,8 @@ import (
 
 	"github.com/adnair2024/blamey/internal/output"
 	"github.com/adnair2024/blamey/internal/pipeline"
+	"github.com/adnair2024/blamey/internal/stats"
+	"github.com/adnair2024/blamey/internal/tui"
 )
 
 // listFlag collects a repeatable string flag.
@@ -97,6 +99,11 @@ func parseArgs(args []string, errOut io.Writer) (config, error) {
 }
 
 func run(ctx context.Context, cfg config, stdout, stderr *os.File) error {
+	// Without a terminal on stdout (pipes, CI) fall back to the plain summary.
+	if !cfg.json && !cfg.plain && isTTY(stdout) && isTTY(os.Stdin) {
+		return tui.Run(ctx, loadFunc(cfg.Options), tui.Options{ShowBots: cfg.bots})
+	}
+
 	prog := newProgress(stderr)
 	report, err := pipeline.Run(ctx, cfg.Options, prog.update)
 	prog.clear()
@@ -106,10 +113,16 @@ func run(ctx context.Context, cfg config, stdout, stderr *os.File) error {
 	if cfg.json {
 		return output.JSON(stdout, report)
 	}
-	// The interactive TUI arrives in a later phase; until then every path ends
-	// in the plain summary, which is also what non-TTY output must be.
 	output.Plain(stdout, report, output.Options{ShowBots: cfg.bots})
 	return nil
+}
+
+// loadFunc adapts the pipeline to the TUI, which never imports git or the
+// pipeline itself.
+func loadFunc(opts pipeline.Options) tui.LoadFunc {
+	return func(ctx context.Context, progress func(tui.Progress)) (stats.Report, error) {
+		return pipeline.Run(ctx, opts, func(p pipeline.Progress) { progress(tui.Progress(p)) })
+	}
 }
 
 // progress prints phase updates to stderr, but only when it is a terminal so

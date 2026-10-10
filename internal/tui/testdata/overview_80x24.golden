@@ -1,0 +1,24 @@
+blamey  /home/dev/acme @ HEAD (01234567)
+ 1 Overview  2 Contributors  3 Ownership  4 Activity  5 Files       bots: hidden
+
+╭──────────────────╮╭──────────────────╮╭──────────────────╮╭──────────────────╮
+│ Surviving lines  ││ Contributors     ││ Commits          ││ Bus factor       │
+│ 1,892            ││ 6  (1 bots)      ││ 400              ││ 3                │
+╰──────────────────╯╰──────────────────╯╰──────────────────╯╰──────────────────╯
+
+Top owners (surviving lines at HEAD)
+Bob Smith      █████████████████████████████████████████████   25.4%        480
+Dana Reyes     █████████████████████████████████████████▎      23.3%        440
+李雷           ███████████████████████████████▉                18.0%        340
+Alice Johnson  ███████████████████████████████                 17.4%        330
+Eli Dormant    ███████████████████████████▎                    15.3%        290
+
+Activity
+▅▄▅▅▆▆▆▅█▆█▆█▅▇▆▆▆▆▅█▅▇▆▆▆▆▆▆▆▆▅█▅▆▆▆▆▇▅▇▆▇▅▆▅▆▅▄
+2023-10-02 → 2024-09-02 · commits per week · timezone UTC
+
+
+
+
+
+1-5 jump to tab • ↑/k up • enter open • esc back • s sort column • / filter …

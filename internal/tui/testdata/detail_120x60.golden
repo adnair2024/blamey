@@ -1,0 +1,60 @@
+blamey  /home/dev/acme @ HEAD (01234567)
+ 1 Overview  2 Contributors  3 Ownership  4 Activity  5 Files                                               bots: hidden
+
+Bob Smith  <bob@x.io>
+
+Commits           107      Files owned       1
+Lines added       1,371    First commit      10 months ago (2023-10-22)
+Lines deleted     215      Last commit       5 days ago (2024-09-04)
+Net lines         1,156    Active days       107
+Surviving lines   480      Longest streak    1 day
+Ownership         25.4%    Current streak    0 days
+Survival rate     35.0%    Avg commit size   14.8 lines
+~Churn            ~891     Median commit     15.0 lines
+Files touched     5        Peak              Sunday, 10:00
+
+Top languages
+Go  ████████████████████████████████████████       480  100.0%
+
+Top directories
+internal  ████████████████████████████████████████       450   93.8%
+cmd       ██▋                                             30    6.2%
+
+Commits by weekday and hour (author's own timezone)
+    00    03    06    09    12    15    18    21
+Mon · · · · · · · · · · █ · · · · · · · · · · · · ·
+Tue · · · · · · · · · · █ · · · · · · · · · · · · ·
+Wed · · · · · · · · · · █ · · · · · · · · · · · · ·
+Thu · · · · · · · · · · █ · · · · · · · · · · · · ·
+Fri · · · · · · · · · · █ · · · · · · · · · · · · ·
+Sat · · · · · · · · · · █ · · · · · · · · · · · · ·
+Sun · · · · · · · · · · █ · · · · · · · · · · · · ·
+
+Weekly commits
+▁▁▄▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▆▆█▄
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+esc back · ↑/↓ scroll
+1-5 jump to tab • ↑/k up • enter open • esc back • s sort column • / filter • b toggle bots • ? help • q quit
