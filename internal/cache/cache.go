@@ -102,7 +102,7 @@ func read[T any](s *Store, file, key string) (T, bool) {
 		s.misses.Add(1)
 		return zero, false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	var e entry[T]
 	if err := gob.NewDecoder(f).Decode(&e); err != nil || e.Key != key {
 		s.misses.Add(1)
