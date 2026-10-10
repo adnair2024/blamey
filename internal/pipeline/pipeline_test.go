@@ -2,10 +2,14 @@ package pipeline
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/adnair2024/blamey/internal/cache"
 	"github.com/adnair2024/blamey/internal/testutil"
 )
 
@@ -22,7 +26,7 @@ func TestRunEndToEnd(t *testing.T) {
 
 	var mu sync.Mutex
 	var phases []string
-	rep, err := Run(context.Background(), Options{Repo: r.Dir, Jobs: 2}, func(p Progress) {
+	rep, err := Run(context.Background(), Options{Repo: r.Dir, Jobs: 2, NoCache: true}, func(p Progress) {
 		mu.Lock()
 		phases = append(phases, p.Phase)
 		mu.Unlock()
@@ -63,7 +67,7 @@ func TestRunIncludeVendor(t *testing.T) {
 	r := testutil.NewRepo(t)
 	r.Write("vendor/v.txt", testutil.Lines("v", 7))
 	r.Commit("Alice", "alice@example.com", day(1), "init")
-	rep, err := Run(context.Background(), Options{Repo: r.Dir, Include: []string{"vendor/**"}}, nil)
+	rep, err := Run(context.Background(), Options{Repo: r.Dir, Include: []string{"vendor/**"}, NoCache: true}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +78,7 @@ func TestRunIncludeVendor(t *testing.T) {
 
 func TestRunEmptyAndInvalid(t *testing.T) {
 	r := testutil.NewRepo(t)
-	rep, err := Run(context.Background(), Options{Repo: r.Dir}, nil)
+	rep, err := Run(context.Background(), Options{Repo: r.Dir, NoCache: true}, nil)
 	if err != nil {
 		t.Fatalf("empty repo must not error: %v", err)
 	}
@@ -93,7 +97,7 @@ func TestRunDetachedHeadAndShallow(t *testing.T) {
 	r.Write("a.txt", "x\ny\n")
 	r.Commit("A", "a@x", day(2), "two")
 	r.Git(nil, "checkout", "-q", "--detach", first)
-	rep, err := Run(context.Background(), Options{Repo: r.Dir}, nil)
+	rep, err := Run(context.Background(), Options{Repo: r.Dir, NoCache: true}, nil)
 	if err != nil || rep.Totals.Commits != 1 {
 		t.Fatalf("detached HEAD: %v %+v", err, rep.Totals)
 	}
@@ -105,7 +109,89 @@ func TestRunCancelled(t *testing.T) {
 	r.Commit("A", "a@x", day(1), "one")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := Run(ctx, Options{Repo: r.Dir}, nil); err == nil {
+	if _, err := Run(ctx, Options{Repo: r.Dir, NoCache: true}, nil); err == nil {
 		t.Error("expected error on cancelled context")
 	}
+}
+
+func TestRunUsesCache(t *testing.T) {
+	r := testutil.NewRepo(t)
+	r.Write("a.txt", testutil.Lines("a", 6))
+	r.Write("b.txt", testutil.Lines("b", 4))
+	r.Commit("Alice", "alice@example.com", day(1), "init")
+	opts := Options{Repo: r.Dir, CacheDir: t.TempDir()}
+
+	first, err := Run(context.Background(), opts, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := Run(context.Background(), opts, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Totals != second.Totals || len(first.Contributors) != len(second.Contributors) ||
+		first.Contributors[0].Surviving != second.Contributors[0].Surviving {
+		t.Errorf("cached run differs:\n%+v\n%+v", first.Totals, second.Totals)
+	}
+
+	// Count how the second run was served by opening the same store.
+	store := cache.Open(first.Meta.Path, opts.CacheDir)
+	if _, ok := store.GetLog(cache.LogKey{Head: first.Meta.Head, Rev: "HEAD"}); !ok {
+		t.Error("history should be cached under the HEAD sha")
+	}
+
+	// A new commit changes one file: only that file is re-blamed, and the
+	// results stay correct.
+	r.Write("a.txt", testutil.Lines("a", 6)+"extra\n")
+	r.Commit("Bob", "bob@example.com", day(2), "edit")
+	third, err := Run(context.Background(), opts, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if third.Totals.SurvivingLines != 11 || third.Totals.Commits != 2 {
+		t.Errorf("after edit: %+v", third.Totals)
+	}
+	s := cache.Open(first.Meta.Path, opts.CacheDir)
+	if _, ok := s.Get("b.txt", blobOf(t, r, "b.txt")); !ok {
+		t.Error("unchanged file should still be cached")
+	}
+}
+
+func TestNoCacheWritesNothing(t *testing.T) {
+	r := testutil.NewRepo(t)
+	r.Write("a.txt", "x\n")
+	r.Commit("A", "a@x", day(1), "one")
+	dir := t.TempDir()
+	if _, err := Run(context.Background(), Options{Repo: r.Dir, CacheDir: dir, NoCache: true}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if entries, _ := os.ReadDir(dir); len(entries) != 0 {
+		t.Errorf("--no-cache wrote %d entries", len(entries))
+	}
+}
+
+func TestCorruptCacheRecomputes(t *testing.T) {
+	r := testutil.NewRepo(t)
+	r.Write("a.txt", testutil.Lines("a", 5))
+	r.Commit("A", "a@x", day(1), "one")
+	dir := t.TempDir()
+	opts := Options{Repo: r.Dir, CacheDir: dir}
+	if _, err := Run(context.Background(), opts, nil); err != nil {
+		t.Fatal(err)
+	}
+	_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, _ error) error {
+		if d != nil && !d.IsDir() && filepath.Ext(p) == ".gob" {
+			_ = os.WriteFile(p, []byte("garbage"), 0o644)
+		}
+		return nil
+	})
+	rep, err := Run(context.Background(), opts, nil)
+	if err != nil || rep.Totals.SurvivingLines != 5 {
+		t.Fatalf("corrupt cache must silently recompute: %v %+v", err, rep.Totals)
+	}
+}
+
+func blobOf(t *testing.T, r *testutil.Repo, path string) string {
+	t.Helper()
+	return strings.TrimSpace(r.Git(nil, "rev-parse", "HEAD:"+path))
 }

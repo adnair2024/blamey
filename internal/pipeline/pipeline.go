@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
+	"github.com/adnair2024/blamey/internal/cache"
 	"github.com/adnair2024/blamey/internal/git"
 	"github.com/adnair2024/blamey/internal/stats"
 )
@@ -25,7 +27,10 @@ type Options struct {
 	IncludeMerges bool
 	MergeByName   bool
 	Jobs          int
-	Cache         git.BlameCache // optional
+	// NoCache bypasses the on-disk cache (--no-cache).
+	NoCache bool
+	// CacheDir overrides the cache root; empty means the user cache dir.
+	CacheDir string
 }
 
 // Progress describes the current phase. Total is 0 when the phase has no
@@ -67,10 +72,16 @@ func Run(ctx context.Context, opts Options, progress func(Progress)) (stats.Repo
 		return stats.Report{}, err
 	}
 
+	var store *cache.Store
+	var blameCache git.BlameCache
+	if !opts.NoCache {
+		if store = cache.Open(abs, opts.CacheDir); store != nil {
+			blameCache = store
+		}
+	}
+
 	progress(Progress{Phase: "reading history"})
-	commits, err := git.Log(ctx, abs, git.LogOptions{
-		Rev: opts.Rev, Since: opts.Since, Until: opts.Until, IncludeMerges: opts.IncludeMerges,
-	})
+	commits, err := loadHistory(ctx, abs, meta.Head, store, opts)
 	if err != nil {
 		return stats.Report{}, err
 	}
@@ -88,7 +99,7 @@ func Run(ctx context.Context, opts Options, progress func(Progress)) (stats.Repo
 
 	progress(Progress{Phase: "blaming", Total: len(files)})
 	blame, err := git.BlameAll(ctx, abs, files, git.BlameOptions{
-		Rev: opts.Rev, Jobs: opts.Jobs, Cache: opts.Cache, Filter: filter,
+		Rev: opts.Rev, Jobs: opts.Jobs, Cache: blameCache, Filter: filter,
 		Progress: func(done, total int) {
 			progress(Progress{Phase: "blaming", Done: done, Total: total})
 		},
@@ -101,4 +112,40 @@ func Run(ctx context.Context, opts Options, progress func(Progress)) (stats.Repo
 	return stats.Build(stats.Input{
 		Meta: meta, Commits: commits, Blame: blame, Filter: filter, MergeByName: opts.MergeByName,
 	}), nil
+}
+
+// loadHistory reads the log, using the cache when the same HEAD and options
+// were parsed before.
+func loadHistory(ctx context.Context, repo, head string, store *cache.Store, opts Options) ([]git.Commit, error) {
+	key := cache.LogKey{Head: head, Rev: opts.Rev, Since: opts.Since, Until: opts.Until, IncludeMerges: opts.IncludeMerges}
+	// A relative window like "2 weeks ago" means something different tomorrow,
+	// so only absolute dates are safe to cache against a fixed HEAD.
+	cacheable := absoluteDate(opts.Since) && absoluteDate(opts.Until)
+	if cacheable {
+		if commits, ok := store.GetLog(key); ok {
+			return commits, nil
+		}
+	}
+	commits, err := git.Log(ctx, repo, git.LogOptions{
+		Rev: opts.Rev, Since: opts.Since, Until: opts.Until, IncludeMerges: opts.IncludeMerges,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if cacheable {
+		store.PutLog(key, commits)
+	}
+	return commits, nil
+}
+
+func absoluteDate(s string) bool {
+	if s == "" {
+		return true
+	}
+	for _, layout := range []string{"2006-01-02", "2006-01-02 15:04:05", time.RFC3339} {
+		if _, err := time.Parse(layout, s); err == nil {
+			return true
+		}
+	}
+	return false
 }

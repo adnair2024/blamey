@@ -71,6 +71,7 @@ func parseArgs(args []string, errOut io.Writer) (config, error) {
 	fs.Var(&exclude, "exclude", "glob to skip (repeatable)")
 	fs.BoolVar(&cfg.IncludeMerges, "include-merges", false, "count merge commits")
 	fs.BoolVar(&cfg.MergeByName, "merge-by-name", false, "merge authors that share a normalized name")
+	fs.BoolVar(&cfg.NoCache, "no-cache", false, "ignore and do not write the on-disk cache")
 	fs.BoolVar(&cfg.json, "json", false, "print the full report as JSON and exit")
 	fs.BoolVar(&cfg.plain, "plain", false, "print a text summary and exit")
 	fs.BoolVar(&cfg.bots, "bots", false, "list bots in the plain summary")
