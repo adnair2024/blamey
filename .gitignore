@@ -25,9 +25,13 @@ profile.cov
 go.work
 go.work.sum
 
+CLAUDE.md
+
 # env file
 .env
 
 # Editor/IDE
 # .idea/
 # .vscode/
+
+bin/

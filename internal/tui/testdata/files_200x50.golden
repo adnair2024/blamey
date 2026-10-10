@@ -1,0 +1,50 @@
+blamey  /home/dev/acme @ HEAD (01234567)
+ 1 Overview  2 Contributors  3 Ownership  4 Activity  5 Files                                                                                                                               bots: hidden
+
+ File                                                                                                                                        Lines ▼  Top owner         Owner%   Authors  Modified
+   internal/api/server.go                                                                                                                    600      Bob Smith         58.3%    3        1 month ago
+   internal/store/db.go                                                                                                                      450      Dana Reyes        66.7%    3        2 months ago
+ ! internal/api/auth.go                                                                                                                      300      Eli Dormant       96.7%    2        9 months ago
+   cmd/app/main.go                                                                                                                           200      Alice Johnson     75.0%    3        6 months ago
+ * internal/store/sql/q.go                                                                                                                   120      Dana Reyes        100.0%   1        4 months ago
+   docs/guide.md                                                                                                                             90       李雷              66.7%    2        5 months ago
+ * cmd/app/flags.go                                                                                                                          80       李雷              100.0%   1        3 months ago
+ * README.md                                                                                                                                 40       Alice Johnson     100.0%   1        7 months ago
+ * go.mod                                                                                                                                    12       dependabot[bot]   100.0%   1        8 days ago
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+! silo (>80% one owner, silent 6+ months)  * single owner  ·  9 of 9 files
+1-5 jump to tab • ↑/k up • enter open • esc back • s sort column • / filter • b toggle bots • ? help • q quit

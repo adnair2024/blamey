@@ -1,0 +1,40 @@
+blamey  /home/dev/acme @ HEAD (01234567)
+ 1 Overview  2 Contributors  3 Ownership  4 Activity  5 Files                           bots: hidden
+
+Help
+
+How to read blamey
+
+Ownership      Lines that still exist at the blamed revision, attributed by
+               git blame (-w -M -C, so whitespace changes and moved code do
+               not steal authorship). It ignores --since/--until.
+Bus factor     The fewest people whose combined ownership exceeds 50%.
+Silo (!)       A file where one person owns over 80% and has not committed for
+               six months or more.
+Single owner * A file with exactly one author left.
+~ approximate  Churn is lines added minus lines surviving. It counts code that
+               anyone removed, not only its author.
+Survival rate  Surviving lines divided by lines added. Not meaningful with
+               --since, because ownership is not windowed.
+Excluded       Vendored and generated code, lockfiles and binaries, unless you
+               pass --include.
+
+Line counts measure volume, not value.
+
+tab       next tab       ↑/k  up           enter     open          s sort column     b toggle bots
+shift+tab prev tab       ↓/j  down         esc       back          S reverse sort    ? help
+1-5       jump to tab    pgup page up      backspace up a level    / filter          q quit
+                         pgdn page down
+
+
+
+
+
+
+
+
+
+
+
+
+1-5 jump to tab • ↑/k up • enter open • esc back • s sort column • / filter • b toggle bots • ? hel…
