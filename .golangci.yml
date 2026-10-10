@@ -6,6 +6,13 @@ linters:
     - gocritic
     - misspell
     - unconvert
+  settings:
+    errcheck:
+      # Writes to stdout/stderr/buffers: nothing useful to do on failure.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
 formatters:
   enable:
     - gofmt
